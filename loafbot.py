@@ -29,6 +29,10 @@ async def on_message(message):
     # always be waiting for commands
     await bot.process_commands(message)
 
+# list of greetings to be used 
+# TODO figure out how to refactor this?
+greetings = []
+
 # load list of greetings the bot uses to respond to "hello"
 # TODO handle non-existent file
 # TODO store greetings per-server
@@ -39,6 +43,8 @@ def load_greetings():
             if line.strip() and line[0] != '#']
 
     rand.shuffle(greetings)
+
+load_greetings()
 
 def spaces(amt : int):
     """Returns a string of a specified number of spaces"""

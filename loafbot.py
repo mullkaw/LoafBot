@@ -106,9 +106,9 @@ async def send(ctx, *args):
 
         await ctx.send("**recieved greeting!**\n" + line.replace('\\n' ,'\n').replace('/', '\\/'))
 
+    # reload and reshuffle greetings
     load_greetings()
 
-    
 
 @bot.command()
 async def add(ctx, *args):

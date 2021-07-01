@@ -25,20 +25,26 @@ def get_temps_string(temps):
         scale = 'f' if 'f' in temp else 'c' if 'c' in temp else 'fc'
 
         # a single temperature conversion string
-        res = ""
 
-        if 'f' in scale:
+        if scale == 'f':
             conv = (number - 32.) * 5. / 9.
             res = f"{number}°F is {round(conv, 2)}°C"
             res_list.append(res)
-        if 'c' in scale:
+        elif scale == 'c':
             conv = (number * 9. / 5.) + 32.
             res = f"{number}°C is {round(conv, 2)}°F"
             res_list.append(res)
-
+        else:
+            # F to C
+            conv = (number - 32.) * 5. / 9.
+            res = f"{number}°F is {round(conv, 2)}°C"
+            res_list.append(res)
+            # C to F
             # if the numbers are the same then only send one line
-            if number == conv:
-                res_list = res_list[:-1]
+            if conv != number:
+                conv = (number * 9. / 5.) + 32.
+                res = f"{number}°C is {round(conv, 2)}°F"
+                res_list.append(res)
 
     return '\n'.join(res_list)
 

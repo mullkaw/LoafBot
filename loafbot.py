@@ -80,7 +80,7 @@ async def hello(ctx):
 
     # if there are too many recent lines
     # then reduce the file to [max_recent] many lines
-    if num_recent > num_greetings:
+    if num_recent > max_recent:
         with open('recent-greetings.txt', 'w') as f:
             f.writelines([l + '\n' for l in recent_lines[-max_recent:]])
 
@@ -104,11 +104,10 @@ async def send(ctx, *args):
 
         f.write(line + '\n')
 
-        await ctx.send("**recieved greeting!**\n" + line.replace('\\n' ,'\n').replace('/', '\\/'))
+        await ctx.send("**received greeting!**\n" + line.replace('\\n' ,'\n').replace('/', '\\/'))
 
     # reload and reshuffle greetings
     load_greetings()
-
 
 @bot.command()
 async def add(ctx, *args):

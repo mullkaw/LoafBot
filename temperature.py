@@ -22,15 +22,11 @@ def get_temps_string(temps):
 
         # whether the temperature can be perceived as Celcius or Fahrenheit
         # both if not sure
-        scale = 'f' if 'f' in temp else 'c' if 'c' in temp else 'fc'
-
-        # a single temperature conversion string
-
-        if scale == 'f':
+        if 'f' in temp:
             conv = (number - 32.) * 5. / 9.
             res = f"{number}°F is {round(conv, 2)}°C"
             res_list.append(res)
-        elif scale == 'c':
+        elif 'c' in temp:
             conv = (number * 9. / 5.) + 32.
             res = f"{number}°C is {round(conv, 2)}°F"
             res_list.append(res)
@@ -51,12 +47,18 @@ def get_temps_string(temps):
 async def convert_message_temps(bot, message):
     """Sends a message with converted temps in the same channel
     
-    Converts every perceived temperature in the message into Fahrenheit and/or Celcuis
+    Converts every perceived temperature in the message into Fahrenheit and/or Celcius
     """
     channel = message.channel
     
     # make sure the bot doesn't reply to itself
     if message.author.id != bot.user.id:
-        temps = re.findall(temp_regex, message.content.lower())
+        text = message.content.lower()
+
+        for word in re.findall(r"(?:f|c)[a-z]*", text):
+            if word not in ['f', 'fahrenheit', 'c', 'celcius']:
+                text = text.replace(word, '', 1)
+
+        temps = re.findall(temp_regex, text)
         if len(temps) >= 1:
             await channel.send(get_temps_string(temps))

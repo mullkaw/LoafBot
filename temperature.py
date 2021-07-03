@@ -55,10 +55,13 @@ async def convert_message_temps(bot, message):
     if message.author.id != bot.user.id:
         text = message.content.lower()
 
+        # iterate through every word starting with either F or C
+        # remove the word if it's not a temperature indicator
         for word in re.findall(r"(?:f|c)[a-z]*", text):
             if word not in ['f', 'fahrenheit', 'c', 'celcius']:
                 text = text.replace(word, '', 1)
 
+        # gets all preceived temperatures in the remaining string
         temps = re.findall(temp_regex, text)
         if len(temps) >= 1:
             await channel.send(get_temps_string(temps))

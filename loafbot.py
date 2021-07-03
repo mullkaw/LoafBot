@@ -3,6 +3,7 @@ import random as rand
 import os
 import temperature as tmp
 import re
+from datetime import datetime
 from discord.ext import commands
 
 def get_token():
@@ -14,12 +15,48 @@ TOKEN = get_token()
 description = '''let's get this bread'''
 bot = commands.Bot(command_prefix='!', description=description)
 
+# maps guild IDs to respective list of servers
+greetings = {}
+
+# load list of greetings the bot uses to respond to "hello"
+def load_greetings():
+    global greetings
+
+    for guild in bot.guilds:
+        with open(f"server-data/{guild.name}-{guild.id}/greetings.txt", 'r') as f:
+            greetings[guild.id] = [line.replace('\\n', '\n') for line in f.readlines() \
+                if line.strip() and line[0] != '#']
+
+            if len(greetings[guild.id]) == 0:
+                greetings[guild.id].append("Hello there!")
+
+        rand.shuffle(greetings[guild.id])
+
+@bot.event
+async def on_connect():
+    pass
+
 @bot.event
 async def on_ready():
-    print('Logged right in as')
+    print('Logged in as')
     print(bot.user.name)
     print(bot.user.id)
+    print(datetime.now())
     print('------')
+
+    for guild in bot.guilds:
+        # name of directory for specific server
+        # ends in /
+        dir = f"server-data/{guild.name}-{guild.id}/"
+
+        if not os.path.isdir(dir):
+            os.mkdir(dir)
+            with open(dir + "greetings.txt", 'a'):
+                pass
+            with open(dir + "recent-greetings.txt", 'a'):
+                pass
+
+    load_greetings()
 
 @bot.event
 async def on_message(message):
@@ -29,23 +66,6 @@ async def on_message(message):
     # always be waiting for commands
     await bot.process_commands(message)
 
-# list of greetings to be used 
-# TODO figure out how to refactor this?
-greetings = []
-
-# load list of greetings the bot uses to respond to "hello"
-# TODO handle non-existent file
-# TODO store greetings per-server
-def load_greetings():
-    global greetings
-    with open("greetings.txt", 'r') as f:
-        greetings = [line.replace('\\n', '\n') for line in f.readlines() \
-            if line.strip() and line[0] != '#']
-
-    rand.shuffle(greetings)
-
-load_greetings()
-
 def spaces(amt : int):
     """Returns a string of a specified number of spaces"""
     return amt * ' '
@@ -53,40 +73,48 @@ def spaces(amt : int):
 @bot.command(aliases=['h'])
 async def hello(ctx):
     """say hi!"""
+
+    # the current server
+    curr_guild = ctx.guild
+
+    # list of greetings for the current server
+    curr_greetings = greetings[ctx.guild.id]
+
     # the total number of greetings loaded
-    num_greetings = len(greetings)
+    num_greetings = len(curr_greetings)
 
     # a random greeting among the greetings
-    message = rand.choice(greetings)
+    message = rand.choice(curr_greetings)
     
     # the total number of recent greetings stored
     num_recent = -1
 
     # the maximum amount of recent greetings to store
-    max_recent = 50
+    max_recent = int(min(50, num_greetings / 2))
 
     # list of recent greetings stored
     recent_lines = []
 
-    with open('recent-greetings.txt', 'r') as f:
+    with open(f"server-data/{curr_guild.name}-{curr_guild.id}/recent-greetings.txt", 'r') as f:
         recent_lines = [l.strip() for l in f.readlines()]
         num_recent = len(recent_lines)
 
         # check whether the first line of the message
         # is within the first fifty lines of recent-greetings
         # loop until it's not
-        while message.split('\n')[0].strip() in recent_lines[-max_recent:]:
-            message = rand.choice(greetings)
+        if num_greetings >= 2:
+            while message.split('\n')[0].strip() in recent_lines[-max_recent:]:
+                message = rand.choice(curr_greetings)
 
     # if there are too many recent lines
     # then reduce the file to [max_recent] many lines
     if num_recent > max_recent:
-        with open('recent-greetings.txt', 'w') as f:
+        with open(f"server-data/{curr_guild.name}-{curr_guild.id}/recent-greetings.txt", 'w') as f:
             f.writelines([l + '\n' for l in recent_lines[-max_recent:]])
 
     # append first line of the greeting to recents file
     # TODO append it in the same form as in the original file
-    with open('recent-greetings.txt', 'a') as f:
+    with open(f"server-data/{curr_guild.name}-{curr_guild.id}/recent-greetings.txt", 'a') as f:
         f.write(message.split('\n')[0] + '\n')
 
     # send the greeting as a message
@@ -95,7 +123,11 @@ async def hello(ctx):
 @bot.command(aliases=['s'])
 async def send(ctx, *args):
     """Sends a quote to be used in greetings"""
-    with open('greetings.txt', 'a') as f:
+
+    # the current server
+    curr_guild = ctx.guild
+
+    with open(f"server-data/{curr_guild.name}-{curr_guild.id}/greetings.txt", 'a') as f:
         # line to write to greetings
         line = ""
 

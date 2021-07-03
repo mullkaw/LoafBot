@@ -32,9 +32,24 @@ def load_greetings():
 
         rand.shuffle(greetings[guild.id])
 
+# TODO make it so that it makes folders on server join
 @bot.event
 async def on_connect():
     pass
+
+@bot.event 
+async def on_guild_join(guild):
+    # TODO factor out guild preparation stuff
+    dir = f"server-data/{guild.name}-{guild.id}/"
+
+    if not os.path.isdir(dir):
+        os.mkdir(dir)
+        with open(dir + "greetings.txt", 'a'):
+            pass
+        with open(dir + "recent-greetings.txt", 'a'):
+            pass
+
+    load_greetings()
 
 @bot.event
 async def on_ready():
@@ -213,11 +228,11 @@ async def da(ctx, *args):
         elif re.match(woman_regex, arg):
             gender = "woman"
         elif re.match(curly_regex, arg):
-            curly, blond, default_hair = True, False, False
+            curly, blond = True, False
         elif re.match(blond_regex, arg):
-            curly, blond, default_hair = False, True, False
+            curly, blond = False, True
         elif re.match(default_hair_regex, arg):
-            curly, blond, default_hair = False, False, True
+            curly, blond = False, False
         elif re.match(you_regex, arg):
             subject = "you"
         else:

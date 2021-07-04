@@ -5,7 +5,7 @@ from discord.ext import commands
 num_regex = r"-?[0-9]+\.?[0-9]*"
 
 # regex string for a temperature
-temp_regex = num_regex + r"(?:[\s°]*(?:c(?:elcius)?|f(?:ahrenheit)?|degree(?:s)?\s*(?:c(?:elcius)?|f(?:ahrenheit)?)?)|°)"
+temp_regex = num_regex + r"(?:[\s°]*(?:c(?:elcius)?|f(?:ahrenheit)?|degree(?:s)?\s*(?:c(?:elcius)?|f(?:ahrenheit)?)?)|[\s]*°)"
 
 def get_temps_string(temps):
     """Returns string containing all of the perceived temperatures of the given message"""
@@ -16,7 +16,7 @@ def get_temps_string(temps):
     for temp in temps:
         # match of the number string within the temperature string
         m = re.search(num_regex, temp)
-
+        
         # the value of the temperature
         number = float(m.string[m.start(0):m.end(0)])
 
@@ -54,13 +54,19 @@ async def convert_message_temps(bot, message):
     # make sure the bot doesn't reply to itself
     if message.author.id != bot.user.id:
         text = message.content.lower()
-
+        
+        # iterate through every alphanumeric space-separated chunk
+        # and remove those that are very likely not temperatures
+        for word in text.split():
+            if re.match(r"-?[0-9]+\.?[0-9]*[^fcd°0-9](?:.)*", word):
+                text = text.replace(word, ' ', 1)
+        
         # iterate through every word starting with either F or C
         # remove the word if it's not a temperature indicator
         for word in re.findall(r"(?:f|c)[a-z]*", text):
             if word not in ['f', 'fahrenheit', 'c', 'celcius']:
-                text = text.replace(word, '', 1)
-
+                text = text.replace(word, ' ', 1)
+        
         # gets all preceived temperatures in the remaining string
         temps = re.findall(temp_regex, text)
         if len(temps) >= 1:

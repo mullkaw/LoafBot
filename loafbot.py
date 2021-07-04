@@ -18,8 +18,27 @@ bot = commands.Bot(command_prefix='!', description=description)
 # maps guild IDs to respective list of servers
 greetings = {}
 
-# load list of greetings the bot uses to respond to "hello"
+def prepare_guild(guild):
+    """Creates files and folders corresponding to a server if not already there
+    
+    For use in storing greetings and other things
+    """
+
+    dir = f"server-data/{guild.name}-{guild.id}/"
+
+    if not os.path.isdir(dir):
+        os.mkdir(dir)
+        with open(dir + "greetings.txt", 'a'):
+            pass
+        with open(dir + "recent-greetings.txt", 'a'):
+            pass
+
+
 def load_greetings():
+    """Loads the lists of greetings the bot uses to respond to "hello"
+
+    Does this for each server the bot is connected to
+    """
     global greetings
 
     for guild in bot.guilds:
@@ -39,16 +58,7 @@ async def on_connect():
 
 @bot.event 
 async def on_guild_join(guild):
-    # TODO factor out guild preparation stuff
-    dir = f"server-data/{guild.name}-{guild.id}/"
-
-    if not os.path.isdir(dir):
-        os.mkdir(dir)
-        with open(dir + "greetings.txt", 'a'):
-            pass
-        with open(dir + "recent-greetings.txt", 'a'):
-            pass
-
+    prepare_guild(guild)
     load_greetings()
 
 @bot.event
@@ -60,16 +70,7 @@ async def on_ready():
     print('------')
 
     for guild in bot.guilds:
-        # name of directory for specific server
-        # ends in /
-        dir = f"server-data/{guild.name}-{guild.id}/"
-
-        if not os.path.isdir(dir):
-            os.mkdir(dir)
-            with open(dir + "greetings.txt", 'a'):
-                pass
-            with open(dir + "recent-greetings.txt", 'a'):
-                pass
+        prepare_guild(guild)
 
     load_greetings()
 
@@ -118,6 +119,7 @@ async def hello(ctx):
         # is within the first fifty lines of recent-greetings
         # loop until it's not
         if num_greetings >= 2:
+            # TODO make this not a while loop and instead more like a filter
             while message.split('\n')[0].strip() in recent_lines[-max_recent:]:
                 message = rand.choice(curr_greetings)
 
@@ -149,9 +151,11 @@ async def send(ctx, *args):
         for arg in args:
             line += arg.replace('\n', '\\n') + ' '
 
-        f.write(line + '\n')
-
-        await ctx.send("**received greeting!**\n" + line.replace('\\n' ,'\n').replace('/', '\\/'))
+        if len(re.sub(r"\s+", '', line)) >= 1:
+            f.write(line + '\n')
+            await ctx.send("**received greeting!**\n" + line.replace('\\n' ,'\n').replace('/', '\\/'))
+        else:
+            await ctx.send("**no greeting sent**\n")
 
     # reload and reshuffle greetings
     load_greetings()

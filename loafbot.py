@@ -33,6 +33,13 @@ def prepare_guild(guild):
         with open(dir + "recent-greetings.txt", 'a'):
             pass
 
+def guild_path(guild):
+    """Returns the path to this server's data folder
+    
+    Path ends in a forward slash
+    """
+
+    return f"server-data/{guild.name}-{guild.id}/"
 
 def load_greetings():
     """Loads the lists of greetings the bot uses to respond to "hello"
@@ -51,10 +58,9 @@ def load_greetings():
 
         rand.shuffle(greetings[guild.id])
 
-# TODO make it so that it makes folders on server join
 @bot.event
 async def on_connect():
-    pass
+    print('Connected')
 
 @bot.event 
 async def on_guild_join(guild):
@@ -111,7 +117,7 @@ async def hello(ctx):
     # list of recent greetings stored
     recent_lines = []
 
-    with open(f"server-data/{curr_guild.name}-{curr_guild.id}/recent-greetings.txt", 'r') as f:
+    with open(f"{guild_path(curr_guild)}recent-greetings.txt", 'r') as f:
         recent_lines = [l.strip() for l in f.readlines()]
         num_recent = len(recent_lines)
 
@@ -119,19 +125,21 @@ async def hello(ctx):
         # is within the first fifty lines of recent-greetings
         # loop until it's not
         if num_greetings >= 2:
-            # TODO make this not a while loop and instead more like a filter
-            while message.split('\n')[0].strip() in recent_lines[-max_recent:]:
-                message = rand.choice(curr_greetings)
+            # filters out the recent greetings from the current greetings
+            for line in recent_lines[-max_recent:]:
+                if message.split('\n')[0].strip() == line:
+                    curr_greetings.remove(message)
+                    message = rand.choice(curr_greetings)
 
     # if there are too many recent lines
     # then reduce the file to [max_recent] many lines
     if num_recent > max_recent:
-        with open(f"server-data/{curr_guild.name}-{curr_guild.id}/recent-greetings.txt", 'w') as f:
+        with open(f"{guild_path(curr_guild)}recent-greetings.txt", 'w') as f:
             f.writelines([l + '\n' for l in recent_lines[-max_recent:]])
 
     # append first line of the greeting to recents file
     # TODO append it in the same form as in the original file
-    with open(f"server-data/{curr_guild.name}-{curr_guild.id}/recent-greetings.txt", 'a') as f:
+    with open(f"{guild_path(curr_guild)}recent-greetings.txt", 'a') as f:
         f.write(message.split('\n')[0] + '\n')
 
     # send the greeting as a message
@@ -144,7 +152,7 @@ async def send(ctx, *args):
     # the current server
     curr_guild = ctx.guild
 
-    with open(f"server-data/{curr_guild.name}-{curr_guild.id}/greetings.txt", 'a') as f:
+    with open(f"{guild_path(curr_guild)}greetings.txt", 'a') as f:
         # line to write to greetings
         line = ""
 

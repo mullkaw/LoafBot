@@ -106,6 +106,7 @@ async def get_quiet(ctx, args):
 
     for arg in loc_args:
         if re.match(quiet_regex, arg):
+            quiet = True
             await ctx.message.delete()
             args.remove(arg)
 

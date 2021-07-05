@@ -1,3 +1,6 @@
+# TODO add configurable settings folder for each server
+# TODO add control room so i can talk through the bot and configure other servers in my own server
+
 import discord
 import random as rand
 import os
@@ -11,6 +14,9 @@ def get_token():
         return f.readline().strip()
 
 TOKEN = get_token()
+
+# regex used to detect when --quiet flag was passed
+quiet_regex = r"[-]{1,2}(?:q|quiet)"
 
 description = '''let's get this bread'''
 bot = commands.Bot(command_prefix='!', description=description)
@@ -88,13 +94,41 @@ async def on_message(message):
     # always be waiting for commands
     await bot.process_commands(message)
 
+
+async def get_quiet(ctx, args):
+    """Returns
+    
+    Does
+    """
+
+    print("len:", len(args))
+
+    # if len(args) <= 1:
+    #     return False, args
+
+    quiet = False
+    args = list(args)
+
+    # args = [str(arg[0]) for arg in list(args)]
+
+    for arg in args:
+        if re.match(quiet_regex, arg):
+            await ctx.message.delete()
+            args.remove(arg)
+            break
+    
+    return quiet, tuple(args)
+
 def spaces(amt : int):
     """Returns a string of a specified number of spaces"""
     return amt * ' '
 
 @bot.command(aliases=['h'])
-async def hello(ctx):
+async def hello(ctx, *args):
     """say hi!"""
+
+    # whether or not to execute this command quietly
+    _, args = await get_quiet(ctx, args)
 
     # the current server
     curr_guild = ctx.guild
@@ -149,6 +183,9 @@ async def hello(ctx):
 async def send(ctx, *args):
     """Sends a quote to be used in greetings"""
 
+    # whether or not to execute this command quietly
+    quiet, args = await get_quiet(ctx, args)
+
     # the current server
     curr_guild = ctx.guild
 
@@ -156,12 +193,15 @@ async def send(ctx, *args):
         # line to write to greetings
         line = ""
 
+        # remove newlines for storage purposes
         for arg in args:
             line += arg.replace('\n', '\\n') + ' '
 
+        # only add message if it's not just whitespace
         if len(re.sub(r"\s+", '', line)) >= 1:
             f.write(line + '\n')
-            await ctx.send("**received greeting!**\n" + line.replace('\\n' ,'\n').replace('/', '\\/'))
+            if not quiet:
+                await ctx.send("**received greeting!**\n" + line.replace('\\n' ,'\n').replace('/', '\\/'))
         else:
             await ctx.send("**no greeting sent**\n")
 
@@ -199,6 +239,9 @@ async def mult(ctx, *args):
 @bot.command()
 async def da(ctx, *args):
     """don't care didn't ask plus you're ___"""
+
+    # whether or not to execute this command quietly
+    _, args = await get_quiet(ctx, args)
 
     # format string for "don't care" message
     message = '\u200B' + spaces(17) + "͏͏don't care\n" + \

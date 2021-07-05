@@ -96,27 +96,19 @@ async def on_message(message):
 
 
 async def get_quiet(ctx, args):
-    """Returns
-    
-    Does
+    """Returns whether quiet flag was an argument,
+    and removes it from argument list if it's there
     """
 
-    print("len:", len(args))
-
-    # if len(args) <= 1:
-    #     return False, args
-
     quiet = False
+    loc_args = list(args)
     args = list(args)
 
-    # args = [str(arg[0]) for arg in list(args)]
-
-    for arg in args:
+    for arg in loc_args:
         if re.match(quiet_regex, arg):
             await ctx.message.delete()
             args.remove(arg)
-            break
-    
+
     return quiet, tuple(args)
 
 def spaces(amt : int):

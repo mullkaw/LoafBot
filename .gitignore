@@ -1,6 +1,8 @@
 .vscode/
 __pycache__/
+assets/
 server-data/
+.temp/
 *.txt
 *.sh
 *.bat

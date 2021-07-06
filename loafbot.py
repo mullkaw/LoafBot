@@ -91,6 +91,18 @@ async def on_message(message):
     # convert any perceivable temperatures
     await tmp.convert_message_temps(bot, message)
     
+    # check if user said either "pedro" or "juan" and send image accordingly
+    if message.author.id != bot.user.id:
+        if "pedro" in message.content.lower():
+            await message.channel.send(file=discord.File('assets/pedro.jpg'))
+
+        if "juan" in message.content.lower():
+            await message.channel.send(file=discord.File('assets/juan.jpg'))
+
+    # if message.author.id == bot.user.id:
+    #     for url in [a.url for a in message.attachments]:
+    #         await message.channel.send(url)
+
     # always be waiting for commands
     await bot.process_commands(message)
 
@@ -295,5 +307,37 @@ async def da(ctx, *args):
 
     # send the "dont care" string as a message
     await ctx.send(message)
+
+async def upload_video(ctx, link):
+    """Uploads video at the specified link to the specified context
+    
+    Sends message "failure" if youtube-dl fails
+    """
+
+    exit_code = os.system(f"youtube-dl -f mp4 {link} -o .temp/video.mp4")
+
+    if exit_code == 0:
+        await ctx.send(file=discord.File('.temp/video.mp4'))
+    else:
+        await ctx.send("failure")
+    
+
+@bot.command()
+async def vdl(ctx, *args):
+    """Downloads a video using a provided internet link"""
+
+    # whether or not to execute this command quietly
+    _, args = await get_quiet(ctx, args)
+
+    # create .temp directory if not there already
+    if not os.path.isdir(".temp"):
+        os.mkdir(".temp")
+
+    # TODO maybe find a way to do this in the background 
+    # so that other commands can be run in the meantime
+    for arg in args:
+        await upload_video(ctx, arg)
+
+    # TODO remove this temp directory
 
 bot.run(TOKEN)

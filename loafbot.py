@@ -308,10 +308,10 @@ async def da(ctx, *args):
     # send the "dont care" string as a message
     await ctx.send(message)
 
-async def upload_video(ctx, link):
+async def upload_video(ctx, link, quiet):
     """Uploads video at the specified link to the specified context
     
-    Sends message "failure" if youtube-dl fails
+    Sends message "Unable to download video" if youtube-dl fails
     """
     # path for the video to be downloaded
     video_path = '.temp/video.mp4'
@@ -325,9 +325,23 @@ async def upload_video(ctx, link):
     exit_code = os.system(f"youtube-dl {options} {link} --output {video_path}")
 
     if exit_code == 0 and os.path.isfile(video_path):
-        await ctx.send(file=discord.File(video_path))
+        # the message that the current message replied to
+        # None if it did not reply to a message
+        replied_message = ctx.message.reference
+
+        # reply to the replied message if it's there
+        # otherwise reply to the current message if it's there
+        # otherwise reply to no message
+        if replied_message:
+            msg = await ctx.fetch_message(replied_message.message_id)
+            await msg.reply(file=discord.File(video_path), mention_author=False)
+        elif not quiet:
+            await ctx.reply(file=discord.File(video_path), mention_author=False)
+        else:
+            await ctx.send(file=discord.File(video_path))
+
     else:
-        await ctx.send("unable to download video")
+        await ctx.send("Unable to download video")
 
     # remove existing video.mp4 if it's still there
     if os.path.isfile(video_path):
@@ -338,7 +352,7 @@ async def vdl(ctx, *args):
     """Downloads a video using a provided internet link"""
 
     # whether or not to execute this command quietly
-    _, args = await get_quiet(ctx, args)
+    quiet, args = await get_quiet(ctx, args)
 
     # create .temp directory if not there already
     if not os.path.isdir(".temp"):
@@ -347,7 +361,7 @@ async def vdl(ctx, *args):
     # TODO maybe find a way to do this in the background 
     # so that other commands can be run in the meantime
     for arg in args:
-        await upload_video(ctx, arg)
+        await upload_video(ctx, arg, quiet)
 
     # remove .temp directory if it's still there
     if not os.path.isdir(".temp"):

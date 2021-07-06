@@ -51,6 +51,8 @@ async def convert_message_temps(bot, message):
     """
     channel = message.channel
     
+    # TODO make it so that URL chars like slashes and colons? are included in chunk separation
+
     # make sure the bot doesn't reply to itself
     if message.author.id != bot.user.id:
         text = message.content.lower()

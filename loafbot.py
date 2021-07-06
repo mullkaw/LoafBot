@@ -88,6 +88,9 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
+    if not bot.is_ready():
+        return
+
     # convert any perceivable temperatures
     await tmp.convert_message_temps(bot, message)
     
@@ -328,6 +331,11 @@ async def upload_video(ctx, link, quiet):
         # the message that the current message replied to
         # None if it did not reply to a message
         replied_message = ctx.message.reference
+
+        # removes video embed on current message
+        # if quiet then the message is no longer there
+        if not quiet:
+            await ctx.message.edit(suppress=True)
 
         # reply to the replied message if it's there
         # otherwise reply to the current message if it's there

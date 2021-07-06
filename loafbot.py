@@ -313,14 +313,25 @@ async def upload_video(ctx, link):
     
     Sends message "failure" if youtube-dl fails
     """
+    # path for the video to be downloaded
+    video_path = '.temp/video.mp4'
 
-    exit_code = os.system(f"youtube-dl -f mp4 {link} -o .temp/video.mp4")
+    # remove existing video.mp4 if it's already there
+    if os.path.isfile(video_path):
+        os.remove(video_path)
 
-    if exit_code == 0:
-        await ctx.send(file=discord.File('.temp/video.mp4'))
+    options = "--format mp4 --no-playlist --max-filesize 8m"
+
+    exit_code = os.system(f"youtube-dl {options} {link} --output {video_path}")
+
+    if exit_code == 0 and os.path.isfile(video_path):
+        await ctx.send(file=discord.File(video_path))
     else:
-        await ctx.send("failure")
-    
+        await ctx.send("unable to download video")
+
+    # remove existing video.mp4 if it's still there
+    if os.path.isfile(video_path):
+        os.remove(video_path)
 
 @bot.command()
 async def vdl(ctx, *args):
@@ -338,6 +349,8 @@ async def vdl(ctx, *args):
     for arg in args:
         await upload_video(ctx, arg)
 
-    # TODO remove this temp directory
+    # remove .temp directory if it's still there
+    if not os.path.isdir(".temp"):
+        os.rmdir(".temp")
 
 bot.run(TOKEN)

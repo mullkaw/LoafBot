@@ -57,10 +57,13 @@ async def convert_message_temps(bot, message):
     if message.author.id != bot.user.id:
         text = message.content.lower()
         
+        # regex for alphanumeric chunks that are likely useless for temperatures
+        useless_regex = rf"(?:[^fcd°0-9](?:.)*|{num_regex}[^fcd°0-9](?:.)*)"
+
         # iterate through every alphanumeric space-separated chunk
         # and remove those that are very likely not temperatures
         for word in text.split():
-            if re.match(r"-?[0-9]+\.?[0-9]*[^fcd°0-9](?:.)*", word):
+            if re.match(useless_regex, word):
                 text = text.replace(word, ' ', 1)
         
         # iterate through every word starting with either F or C

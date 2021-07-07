@@ -205,6 +205,11 @@ async def send(ctx, *args):
         for arg in args:
             line += arg.replace('\n', '\\n') + ' '
 
+        # add URLs for message attachmens
+        for attachment in ctx.message.attachments:
+            line = line + '\n' if line != "" else line
+            line += attachment.url + '\n'
+
         # only add message if it's not just whitespace
         if len(re.sub(r"\s+", '', line)) >= 1:
             f.write(line + '\n')

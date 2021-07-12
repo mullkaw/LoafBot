@@ -59,19 +59,25 @@ async def convert_message_temps(bot, message):
         
         # regex for alphanumeric chunks that are likely useless for temperatures
         useless_regex = rf"(?:[^fcd°0-9](?:.)*|{num_regex}[^fcd°0-9](?:.)*)"
-
+        
         # iterate through every alphanumeric space-separated chunk
         # and remove those that are very likely not temperatures
+        words = text.split()
         for word in text.split():
             if re.match(useless_regex, word):
-                text = text.replace(word, ' ', 1)
+                try:
+                    words.remove(word)
+                except ValueError:
+                    pass
+        
+        text = ' '.join(words)
         
         # iterate through every word starting with either F or C
         # remove the word if it's not a temperature indicator
         for word in re.findall(r"(?:f|c)[a-z]*", text):
             if word not in ['f', 'fahrenheit', 'c', 'celcius']:
                 text = text.replace(word, ' ', 1)
-        
+
         # gets all preceived temperatures in the remaining string
         temps = re.findall(temp_regex, text)
         if len(temps) >= 1:

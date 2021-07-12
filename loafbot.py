@@ -375,6 +375,7 @@ async def vdl(ctx, *args):
     if not os.path.isdir(".temp"):
         os.mkdir(".temp")
 
+    # TODO add audio extraction (mp3 and wav)
     # TODO maybe find a way to do this in the background 
     # so that other commands can be run in the meantime
     for arg in args:

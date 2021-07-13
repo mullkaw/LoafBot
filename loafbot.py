@@ -320,19 +320,24 @@ async def da(ctx, *args):
     # send the "dont care" string as a message
     await ctx.send(message)
 
-async def upload_video(ctx, link, quiet):
+async def upload_video(ctx, link, quiet, aspect='video', format='mp4'):
     """Uploads video at the specified link to the specified context
     
     Sends message "Unable to download video" if youtube-dl fails
     """
     # path for the video to be downloaded
-    video_path = '.temp/video.mp4'
+    video_path = f'.temp/{aspect}.{format}'
 
     # remove existing video.mp4 if it's already there
     if os.path.isfile(video_path):
         os.remove(video_path)
 
-    options = "--format mp4 --no-playlist --max-filesize 8m"
+    options = f"--no-playlist --max-filesize 8m"
+
+    if aspect == 'video':
+        options += f" --format {format}"
+    elif aspect == 'audio':
+        options += f" --extract-audio --audio-format {format}"
 
     exit_code = os.system(f"youtube-dl {options} {link} --output {video_path}")
 
@@ -358,7 +363,7 @@ async def upload_video(ctx, link, quiet):
             await ctx.send(file=discord.File(video_path))
 
     else:
-        await ctx.send("Unable to download video")
+        await ctx.send(f"Unable to download {aspect}")
 
     # remove existing video.mp4 if it's still there
     if os.path.isfile(video_path):
@@ -368,21 +373,35 @@ async def upload_video(ctx, link, quiet):
 async def vdl(ctx, *args):
     """Downloads a video using a provided internet link"""
 
+    # list of audio formats supported by youtube-dl
+    audio_formats = ["aac", "flac", "mp3", "m4a", "opus", "vorbis", "wav"]
+
     # whether or not to execute this command quietly
     quiet, args = await get_quiet(ctx, args)
+
+    audio_format = None
 
     # create .temp directory if not there already
     if not os.path.isdir(".temp"):
         os.mkdir(".temp")
 
-    # TODO add audio extraction (mp3 and wav)
     # TODO maybe find a way to do this in the background 
     # so that other commands can be run in the meantime
     for arg in args:
-        await upload_video(ctx, arg, quiet)
+        m = re.match(r"[-]{1,2}(?P<audio_format>(?:\S)*)", arg)
+        if m and m.group('audio_format') in audio_formats:
+            audio_format = m.group('audio_format')
+        elif audio_format:
+            await upload_video(ctx, arg, quiet, aspect='audio', format=audio_format)
+        else:
+            await upload_video(ctx, arg, quiet)
 
     # remove .temp directory if it's still there
     if not os.path.isdir(".temp"):
         os.rmdir(".temp")
+
+@bot.command()
+async def adl(ctx, *args):
+    """Downloads audio using a provided internet link"""
 
 bot.run(TOKEN)

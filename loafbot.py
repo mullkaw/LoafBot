@@ -348,7 +348,7 @@ async def upload_video(ctx, link, quiet, aspect='video', format='mp4'):
         options += f" --extract-audio --audio-format {format}"
 
     command = f"youtube-dl {options} {link} --output {video_path}"
-    run(command).check_returncode()
+    run(command.split()).check_returncode()
 
     if os.path.isfile(video_path):
         # the message that the current message replied to
@@ -416,5 +416,6 @@ async def vdl(ctx, *args):
 @bot.command()
 async def adl(ctx, *args):
     """Downloads audio using a provided internet link"""
+    await vdl(ctx, '-mp3', *args)
 
 bot.run(TOKEN)

@@ -347,9 +347,10 @@ async def upload_video(ctx, link, quiet, aspect='video', format='mp4'):
     elif aspect == 'audio':
         options += f" --extract-audio --audio-format {format}"
 
-    exit_code = os.system(f"youtube-dl {options} {link} --output {video_path}")
+    command = f"youtube-dl {options} {link} --output {video_path}"
+    run(command).check_returncode()
 
-    if exit_code == 0 and os.path.isfile(video_path):
+    if os.path.isfile(video_path):
         # the message that the current message replied to
         # None if it did not reply to a message
         replied_message = ctx.message.reference

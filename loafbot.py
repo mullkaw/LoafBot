@@ -418,4 +418,43 @@ async def adl(ctx, *args):
     """Downloads audio using a provided internet link"""
     await vdl(ctx, '-mp3', *args)
 
+@bot.command()
+async def gif(ctx, *args):
+    """Convert images into gifs"""
+
+    # whether or not to execute this command quietly
+    quiet, args = await get_quiet(ctx, args)
+
+    links = [attachment.url for attachment in ctx.message.attachments]
+
+    # create .temp directory if not there already
+    if not os.path.isdir(".temp"):
+        os.mkdir(".temp")
+
+    file_name = 'file'
+    file_path = f'.temp/{file_name}'
+    gif_path = '.temp/gif.gif'
+
+    for link in links:
+        # download attachment from link
+        command = ['wget', '--output-document', file_path, link]
+        run(command).check_returncode()
+
+        # convert downloaded image into gif
+        command = ['gifski', '.temp/file', file_path, '--output', gif_path]
+        run(command).check_returncode()
+
+        if not quiet:
+            await ctx.reply(file=discord.File(gif_path), mention_author=False)
+        else:
+            await ctx.send(file=discord.File(gif_path))
+
+        # remove files from temp directory
+        os.remove(file_path)
+        os.remove(gif_path)
+
+    # remove .temp directory if it's still there
+    if os.path.isdir(".temp"):
+        os.rmdir(".temp")
+
 bot.run(TOKEN)

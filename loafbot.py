@@ -8,6 +8,10 @@ import temperature as tmp
 import re
 from datetime import datetime
 from discord.ext import commands
+from importlib import import_module
+from subprocess import run, CalledProcessError
+
+from server_data import *
 
 def get_token():
     with open('loafbot-token.txt', 'r') as f:
@@ -30,13 +34,17 @@ def prepare_guild(guild):
     For use in storing greetings and other things
     """
 
-    dir = f"server-data/{guild.name}-{guild.id}/"
+    dir = f"server_data/{guild.name}-{guild.id}/"
 
     if not os.path.isdir(dir):
         os.mkdir(dir)
         with open(dir + "greetings.txt", 'a'):
             pass
         with open(dir + "recent-greetings.txt", 'a'):
+            pass
+        with open(dir + "__init__.py", 'a'):
+            pass
+        with open(dir + "server_code.py", 'a'):
             pass
 
 def guild_path(guild):
@@ -45,7 +53,7 @@ def guild_path(guild):
     Path ends in a forward slash
     """
 
-    return f"server-data/{guild.name}-{guild.id}/"
+    return f"server_data/{guild.name}-{guild.id}/"
 
 def load_greetings():
     """Loads the lists of greetings the bot uses to respond to "hello"
@@ -55,7 +63,7 @@ def load_greetings():
     global greetings
 
     for guild in bot.guilds:
-        with open(f"server-data/{guild.name}-{guild.id}/greetings.txt", 'r') as f:
+        with open(f"server_data/{guild.name}-{guild.id}/greetings.txt", 'r') as f:
             greetings[guild.id] = [line.replace('\\n', '\n') for line in f.readlines() \
                 if line.strip() and line[0] != '#']
 
@@ -93,18 +101,15 @@ async def on_message(message):
 
     # convert any perceivable temperatures
     await tmp.convert_message_temps(bot, message)
-    
-    # check if user said either "pedro" or "juan" and send image accordingly
-    if message.author.id != bot.user.id:
-        if "pedro" in message.content.lower():
-            await message.channel.send(file=discord.File('assets/pedro.jpg'))
 
-        if "juan" in message.content.lower():
-            await message.channel.send(file=discord.File('assets/juan.jpg'))
+    # open the server-specific code
+    pkg_name = 'server_data.' + guild_path(message.guild).split('/')[1] + '.server_code'
+    server_code = import_module(pkg_name)
 
-    # if message.author.id == bot.user.id:
-    #     for url in [a.url for a in message.attachments]:
-    #         await message.channel.send(url)
+    try:
+        await server_code.on_message(message, bot)
+    except AttributeError:
+        print('this server does not have an on_message function')
 
     # always be waiting for commands
     await bot.process_commands(message)
@@ -218,7 +223,10 @@ async def send(ctx, *args):
         if len(re.sub(r"\s+", '', line)) >= 1:
             f.write(line + '\n')
             if not quiet:
-                await ctx.send("**received greeting!**\n" + line.replace('\\n' ,'\n').replace('/', '\\/'))
+                try:
+                    await ctx.send("**received greeting!**\n" + line.replace('\\n' ,'\n').replace('/', '\\/'))
+                except discord.HTTPException:
+                    await ctx.send("**received greeting!**\n")
         else:
             await ctx.send("**no greeting sent**\n")
 
@@ -369,6 +377,10 @@ async def upload_video(ctx, link, quiet, aspect='video', format='mp4'):
     if os.path.isfile(video_path):
         os.remove(video_path)
 
+    # remove temp directory if it's still there
+    if os.path.isdir('.temp'):
+        os.rmdir('.temp')
+
 @bot.command()
 async def vdl(ctx, *args):
     """Downloads a video using a provided internet link"""
@@ -397,7 +409,7 @@ async def vdl(ctx, *args):
             await upload_video(ctx, arg, quiet)
 
     # remove .temp directory if it's still there
-    if not os.path.isdir(".temp"):
+    if os.path.isdir(".temp"):
         os.rmdir(".temp")
 
 @bot.command()

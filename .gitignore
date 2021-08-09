@@ -1,7 +1,7 @@
 .vscode/
 __pycache__/
 assets/
-server-data/
+server_data/
 .temp/
 *.txt
 *.sh

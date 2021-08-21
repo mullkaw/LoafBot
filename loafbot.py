@@ -233,6 +233,22 @@ async def send(ctx, *args):
     # reload and reshuffle greetings
     load_greetings()
 
+@bot.command(aliases=['c'])
+async def count(ctx, *args):
+    """Returns a count of how many greetings are in this server"""
+
+    # whether or not to execute this command quietly
+    _, args = await get_quiet(ctx, args)
+
+    # list of greetings for the current server
+    curr_greetings = greetings[ctx.guild.id]
+
+    # the total number of greetings loaded
+    num_greetings = len(curr_greetings)
+
+    await ctx.send(f"**{num_greetings}** greetings")
+
+
 @bot.command()
 async def add(ctx, *args):
     """Adds a list of numbers together?"""
@@ -401,6 +417,10 @@ async def vdl(ctx, *args):
     # TODO maybe find a way to do this in the background 
     # so that other commands can be run in the meantime
     for arg in args:
+        # check to see if the link is between angle brackets
+        m = re.match(r"<(?P<link>(?:.)*)>", arg)
+        arg = m.group('link') if m else arg
+
         m = re.match(r"[-]{1,2}(?P<audio_format>(?:\S)*)", arg)
         if m and m.group('audio_format') in audio_formats:
             audio_format = m.group('audio_format')

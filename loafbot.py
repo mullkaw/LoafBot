@@ -22,8 +22,11 @@ TOKEN = get_token()
 # regex used to detect when --quiet flag was passed
 quiet_regex = r"[-]{1,2}(?:q|quiet)"
 
+intents = discord.Intents.all()
+flags = discord.MemberCacheFlags.all()
+
 description = '''let's get this bread'''
-bot = commands.Bot(command_prefix='!', description=description)
+bot = commands.Bot(command_prefix='!', description=description, intents=intents, member_cache_flags=flags)
 
 # maps guild IDs to respective list of servers
 greetings = {}
@@ -202,33 +205,47 @@ async def send(ctx, *args):
     # the current server
     curr_guild = ctx.guild
 
-    with open(f"{guild_path(curr_guild)}greetings.txt", 'a') as f:
-        # line to write to greetings
-        line = ""
+    
+    # line to write to greetings
+    line = ""
 
-        # remove newlines for storage purposes
-        for arg in args:
-            line += arg.replace('\n', '\\n') + ' '
+    # remove newlines for storage purposes
+    for arg in args:
+        line += arg.replace('\n', '\\n') + ' '
 
-        # add URLs for message attachmens
-        if not quiet:
-            for attachment in ctx.message.attachments:
-                line = line + '\n' if line != "" else line
-                line += attachment.url + '\n'
+    # add URLs for message attachmens
+    if not quiet:
+        for attachment in ctx.message.attachments:
+            line = line + '\n' if line != "" else line
+            line += attachment.url + '\n'
 
-        if line.endswith('\n'):
-            line = line.strip()
+    if line.endswith('\n'):
+        line = line.strip()
 
-        # only add message if it's not just whitespace
-        if len(re.sub(r"\s+", '', line)) >= 1:
-            f.write(line + '\n')
+    # only add message if it's not just whitespace
+    if len(re.sub(r"\s+", '', line)) >= 1:        
+        with open(f"{guild_path(curr_guild)}greetings.txt", 'r') as f:
+            lines = f.readlines()
+
+        # check if line is already in file
+        if f'{line}\n' not in lines:
+            with open(f"{guild_path(curr_guild)}greetings.txt", 'a') as f:
+                f.write(line + '\n')
+
+            # send response message if no quiet flag is present
             if not quiet:
                 try:
-                    await ctx.send("**received greeting!**\n" + line.replace('\\n' ,'\n').replace('/', '\\/'))
+                    repsonse_text = "**received greeting!**\n" + line.replace('\\n' ,'\n').replace('/', '\\/')
+                    await ctx.send(repsonse_text)
                 except discord.HTTPException:
-                    await ctx.send("**received greeting!**\n")
+                    repsonse_text = "**received greeting!**\n"
+                    await ctx.send(repsonse_text)
         else:
-            await ctx.send("**no greeting sent**\n")
+            repsonse_text = "Greeting is already present"
+            await ctx.send(repsonse_text)
+
+    else:
+        await ctx.send("**no greeting sent**\n")
 
     # reload and reshuffle greetings
     load_greetings()

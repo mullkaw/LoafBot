@@ -189,6 +189,7 @@ async def hello(ctx, *args):
 
     # append first line of the greeting to recents file
     # TODO append it in the same form as in the original file
+    # TODO fix server rename issue
     with open(f"{guild_path(curr_guild)}recent-greetings.txt", 'a') as f:
         f.write(message.split('\n')[0] + '\n')
 
@@ -210,8 +211,10 @@ async def send(ctx, *args):
     line = ""
 
     # remove newlines for storage purposes
-    for arg in args:
-        line += arg.replace('\n', '\\n') + ' '
+    command_pattern = r'\!s(?:end)?(?:\s)+'
+    text = ctx.message.content
+    m = re.match(command_pattern, text)
+    line = text[m.span()[1]:].replace('\n', '\\n')
 
     # add URLs for message attachmens
     if not quiet:

@@ -197,16 +197,12 @@ async def hello(ctx, *args):
     await ctx.send(message)
 
 @bot.command(aliases=['s'])
-async def send(ctx, *args):
+async def send(ctx):
     """Sends a quote to be used in greetings"""
-
-    # whether or not to execute this command quietly
-    quiet, args = await get_quiet(ctx, args)
 
     # the current server
     curr_guild = ctx.guild
 
-    
     # line to write to greetings
     line = ""
 
@@ -217,10 +213,9 @@ async def send(ctx, *args):
     line = text[m.span()[1]:].replace('\n', '\\n') if m else ''
 
     # add URLs for message attachmens
-    if not quiet:
-        for attachment in ctx.message.attachments:
-            line = line + '\n' if line != "" else line
-            line += attachment.url + '\n'
+    for attachment in ctx.message.attachments:
+        line = line + '\n' if line != "" else line
+        line += attachment.url + '\n'
 
     if line.endswith('\n'):
         line = line.strip()
@@ -236,13 +231,12 @@ async def send(ctx, *args):
                 f.write(line + '\n')
 
             # send response message if no quiet flag is present
-            if not quiet:
-                try:
-                    repsonse_text = "**received greeting!**\n" + line.replace('\\n' ,'\n').replace('/', '\\/')
-                    await ctx.send(repsonse_text)
-                except discord.HTTPException:
-                    repsonse_text = "**received greeting!**\n"
-                    await ctx.send(repsonse_text)
+            try:
+                repsonse_text = "**received greeting!**\n" + line.replace('\\n' ,'\n').replace('/', '\\/')
+                await ctx.send(repsonse_text)
+            except discord.HTTPException:
+                repsonse_text = "**received greeting!**\n"
+                await ctx.send(repsonse_text)
         else:
             repsonse_text = "Greeting is already present"
             await ctx.send(repsonse_text)

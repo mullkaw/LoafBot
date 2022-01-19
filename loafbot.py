@@ -214,7 +214,7 @@ async def send(ctx, *args):
     command_pattern = r'\!s(?:end)?(?:\s)+'
     text = ctx.message.content
     m = re.match(command_pattern, text)
-    line = text[m.span()[1]:].replace('\n', '\\n')
+    line = text[m.span()[1]:].replace('\n', '\\n') if m else ''
 
     # add URLs for message attachmens
     if not quiet:

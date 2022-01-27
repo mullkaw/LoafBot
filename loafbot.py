@@ -98,6 +98,23 @@ async def on_ready():
     load_greetings()
 
 @bot.event
+async def on_guild_update(before, after):
+    # change the server_data folder name if guild changed name
+    id = after.id
+    name_old, name_new = before.name, after.name
+
+    if name_old != name_new:
+        old_folder = f'{name_old}-{id}'
+        new_folder = f'{name_new}-{id}'
+
+        print(old_folder, new_folder)
+
+        if old_folder in os.listdir('server_data'):
+            print('here')
+            os.rename(f'server_data/{old_folder}', f'server_data/{new_folder}')
+
+
+@bot.event
 async def on_message(message):
     if not bot.is_ready():
         return
@@ -162,7 +179,7 @@ async def hello(ctx, *args):
     num_recent = -1
 
     # the maximum amount of recent greetings to store
-    max_recent = int(min(50, num_greetings / 2))
+    max_recent = int(min(500, num_greetings / 2))
 
     # list of recent greetings stored
     recent_lines = []

@@ -113,7 +113,6 @@ async def on_guild_update(before, after):
             print('here')
             os.rename(f'server_data/{old_folder}', f'server_data/{new_folder}')
 
-
 @bot.event
 async def on_message(message):
     if not bot.is_ready():
@@ -476,7 +475,7 @@ async def gif(ctx, *args):
     # whether or not to execute this command quietly
     quiet, args = await get_quiet(ctx, args)
 
-    links = [attachment.url for attachment in ctx.message.attachments]
+    links = [attachment.url for attachment in ctx.message.attachments] + list(args)
 
     # create .temp directory if not there already
     if not os.path.isdir(".temp"):
@@ -484,6 +483,7 @@ async def gif(ctx, *args):
 
     file_name = 'file'
     file_path = f'.temp/{file_name}'
+    file_path_png = f'.temp/{file_name}.png'
     gif_path = '.temp/gif.gif'
 
     for link in links:
@@ -491,8 +491,12 @@ async def gif(ctx, *args):
         command = ['wget', '--output-document', file_path, link]
         run(command).check_returncode()
 
+        # convert downloaded image to png
+        command = ['convert', file_path, file_path_png]
+        run(command).check_returncode()
+
         # convert downloaded image into gif
-        command = ['gifski', '.temp/file', file_path, '--output', gif_path]
+        command = ['gifski', file_path_png, file_path_png, '--output', gif_path]
         run(command).check_returncode()
 
         if not quiet:
@@ -502,7 +506,9 @@ async def gif(ctx, *args):
 
         # remove files from temp directory
         os.remove(file_path)
+        os.remove(file_path_png)
         os.remove(gif_path)
+
 
     # remove .temp directory if it's still there
     if os.path.isdir(".temp"):

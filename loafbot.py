@@ -143,6 +143,9 @@ async def get_quiet(ctx, args):
     loc_args = list(args)
     args = list(args)
 
+    if len(loc_args) == 0:
+        return False, ()
+
     for arg in loc_args:
         if re.match(quiet_regex, arg):
             quiet = True
@@ -475,7 +478,15 @@ async def gif(ctx, *args):
     # whether or not to execute this command quietly
     quiet, args = await get_quiet(ctx, args)
 
-    links = [attachment.url for attachment in ctx.message.attachments] + list(args)
+    # the message that the current message replied to
+    # None if it did not reply to a message
+    replied_links = []
+    if ctx.message.reference:
+        replied_message = await ctx.fetch_message(ctx.message.reference.message_id)
+        replied_urls = [attachment.url for attachment in replied_message.attachments]
+        replied_links.extend(replied_urls)
+
+    links = [attachment.url for attachment in ctx.message.attachments] + list(args) + replied_links
 
     # create .temp directory if not there already
     if not os.path.isdir(".temp"):
